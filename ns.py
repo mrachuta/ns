@@ -9,12 +9,28 @@ import re
 import os
 import sys
 import time
+import platform
 import requests
 from datetime import datetime
 from bs4 import BeautifulSoup as bs4
 
+det_os = str(platform.uname())
+
 # File with hashed password
-datafile = 'database.dat'
+
+"""
+If you have problem under Android's QPython3 with file-write permissions,
+please check datafile variable, and compare path with path which is showed under QPpython3
+settings -> FTP menu. In this path, QPython are able to write files. If necessary,
+change the variable below.
+"""
+
+if ('Linux' and ('arm' or 'armv81')) in det_os:
+    print('== URUCHOMIONY NA ANDROID ==')
+    datafile = '/storage/emulated/0/qpython/database.dat'
+else:
+    print('== URUCHOMIONY NA DESKTOP ==')
+    datafile = 'database.dat'
 
 def clean():
 
@@ -160,7 +176,7 @@ class EstablishConnection():
             data = payloadlogin, headers = self.myheaders)
         rlogin = slogin.text
         requestid = str(re.search('id=(.*)', (slogin.url)).group(1))
-        loggedno = find_data(rlogin, 'span', 'class', 'icon-before-mobile infoline', '')
+        loggedno = find_data(rlogin, 'span', 'class', 'sun-user-info__msisdn u-small-spacing-bottom u-small-spacing-top-l u-medium-left u-large-left', '')
         print('-> Udało się, zalogowany numer to: %s' % (loggedno.text))
 
         """
@@ -176,12 +192,12 @@ class EstablishConnection():
             '_dyncharset': 'UTF-8',
             'logout-submit': 'wyloguj się',
             '_D:logout-submit': '',
-            '_DARGS': '/templates/common/user_status.jsp.portal-logout-form'
+            '_DARGS': '/core/v3.0/navigation/account_navigation.jsp.portal-logout-form'
         }
-        slogout = self.s.post('https://www.njumobile.pl/?_DARGS=/templates/common/user_status.jsp.portal-logout-form',
+        slogout = self.s.post('https://www.njumobile.pl/?_DARGS=/core/v3.0/navigation/account_navigation.jsp.portal-logout-form',
                               data = payloadlogout, headers = self.myheaders)
         rlogout = slogout.text
-        logoutconfirm = find_data(rlogout, 'div', 'class', 's-user-info login', '')
+        logoutconfirm = find_data(rlogout, 'span', 'class', 'sun-header__link-inner', '')
 
         if logoutconfirm is None:
             print('-> Coś poszło nie tak, nie wylogowałem')
