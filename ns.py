@@ -27,10 +27,10 @@ change the variable below.
 
 if ('Linux' and ('arm' or 'armv81')) in det_os:
     print('== URUCHOMIONY NA ANDROID ==')
-    datafile = '/storage/emulated/0/qpython/database.dat'
+    data_file = '/storage/emulated/0/qpython/database.dat'
 else:
     print('== URUCHOMIONY NA DESKTOP ==')
-    datafile = 'database.dat'
+    data_file = 'database.dat'
 
 def clean():
 
@@ -39,12 +39,13 @@ def clean():
     and if exists, delete it
     """
 
-    if os.path.exists(datafile) == True:
-        os.remove(datafile)
+    if os.path.exists(data_file) == True:
+        os.remove(data_file)
     else:
         print('Nie ma takiego pliku!')
 
-def encode_data(ulogin, upassword):
+def encode_data(
+        u_login, u_password):
 
     """
     Function encode user login and user password.
@@ -52,19 +53,19 @@ def encode_data(ulogin, upassword):
     """
 
     print('-> Początek procedury hashowania')
-    getcurrenttime = datetime.now()
+    get_current_time = datetime.now()
     # Saving current time as float
-    salt = float(getcurrenttime.strftime('%H%M%S'))
+    salt = float(get_current_time.strftime('%H%M%S'))
     #  Only for diagnostic purposes, enable this line if you want some debug
     #print(salt)
     # Convert each digit in user pass to unicode character
-    hashpassword = [ord(c) for c in upassword]
+    hash_password = [ord(c) for c in u_password]
     # Salting each unicode character
-    saltedpassword = [salt * c for c in hashpassword]
+    salted_password = [salt * c for c in hash_password]
     #  Only for diagnostic purposes, enable this line if you want some debug
-    #print(saltedpassword)
-    file = open(datafile, 'w')
-    file.write(ulogin + str(saltedpassword) + ';' + str(salt / 2) + '\n')
+    #print(salted_password)
+    file = open(data_file, 'w')
+    file.write(u_login + str(salted_password) + ';' + str(salt / 2) + '\n')
     file.close()
     print('-> Koniec procedury hashowania')
 
@@ -74,25 +75,25 @@ def decode_data():
     Function decode saved in 'datafile' characters
     """
 
-    file = open(datafile, 'r')
+    file = open(data_file, 'r')
     for line in file:
-        ulogindecoded = (re.search('(.*)\[', line)).group(1)
+        u_login_decoded = (re.search('(.*)\[', line)).group(1)
         print('-> Początek procedury dehashowania')
         #  Only for diagnostic purposes, enable this line if you want some debug
-        #print(ulogindecoded)
+        #print(u_login_decoded)
         # Search for salted password; next search for salt and decoding it
-        saltedpassword = (re.search('\[(.*)\]', line)).group(1).split(',')
-        saltencoded = float((re.search(';(.*)', line)).group(1))
-        saltdecoded = float(saltencoded)*2
+        salted_password = (re.search('\[(.*)\]', line)).group(1).split(',')
+        salt_encoded = float((re.search(';(.*)', line)).group(1))
+        salt_decoded = float(salt_encoded)*2
         # Decrypting password using decoded salt, saving as array, and next, as string
-        decryptedpassword = [float(c) / saltdecoded for c in saltedpassword]
-        upassworddecoded = ''.join([chr(int(c)) for c in decryptedpassword])
+        decrypted_password = [float(c) / salt_decoded for c in salted_password]
+        u_password_decoded = ''.join([chr(int(c)) for c in decrypted_password])
         print('-> Koniec procedury dehashowania')
-        return ulogindecoded, upassworddecoded
+        return u_login_decoded, u_password_decoded
 
-
-def find_data(response, tagtype, tagparameter,
-              tagname, valuetype):
+def find_data(
+        response, tag_type, tag_parameter,
+        tag_name, value_type):
 
     '''
     Using BeautifulSoup to scrap data (single value).
@@ -102,15 +103,16 @@ def find_data(response, tagtype, tagparameter,
 
     soup = bs4(response, 'html.parser')
 
-    if valuetype != '':
-        searchedvalue = soup.find(tagtype, {tagparameter : tagname})[valuetype]
+    if value_type != '':
+        searchedvalue = soup.find(tag_type, {tag_parameter : tag_name})[value_type]
     else:
-        searchedvalue = soup.find(tagtype, {tagparameter : tagname})
+        searchedvalue = soup.find(tag_type, {tag_parameter : tag_name})
 
     return searchedvalue
 
-def find_all_data(response, tagtype, tagparameter,
-                  tagname, valuetype):
+def find_all_data(
+        response, tag_type, tag_parameter,
+        tag_name, value_type):
 
     """
     Using BeautifulSoup to scrap data (multiple values);
@@ -120,10 +122,10 @@ def find_all_data(response, tagtype, tagparameter,
 
     soup = bs4(response, 'html.parser')
 
-    if valuetype != '':
-        searchedvalues = soup.find_all(tagtype, {tagparameter : tagname})[valuetype]
+    if value_type != '':
+        searchedvalues = soup.find_all(tag_type, {tag_parameter : tag_name})[value_type]
     else:
-        searchedvalues = soup.find_all(tagtype, {tagparameter : tagname})
+        searchedvalues = soup.find_all(tag_type, {tag_parameter : tag_name})
 
     return searchedvalues
 
@@ -135,78 +137,92 @@ class EstablishConnection():
     __init___ is verry necessary
     """
 
-    def __init__(self):
-        self.myheaders = requests.utils.default_headers()
-        self.myheaders.update(
+    def __init__(
+            self):
+        self.my_headers = requests.utils.default_headers()
+        self.my_headers.update(
             {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0',
             }
         )
         self.s = requests.Session()
-        self.loginpage = self.s.get('https://www.njumobile.pl/logowanie',
-                                    headers = self.myheaders)
-        self.r = self.loginpage.text
+        self.login_page = self.s.get('https://www.njumobile.pl/logowanie',
+                                    headers = self.my_headers)
+        self.r = self.login_page.text
 
         """
         To login on page, dynamic session value is necessary
         the function below, grab's this value
         """
 
-        self.sessno = find_data(self.r, 'input', 'name',  '_dynSessConf', 'value')
+        self.sess_no = find_data(self.r, 'input', 'name',  '_dynSessConf', 'value')
 
-    def login_nju(self, purelogin, purepassword):
+    def login_nju(
+            self, pure_login, pure_password):
 
-        payloadlogin = {
+        payload_login = {
             '_dyncharset': 'UTF-8',
-            '_dynSessConf': self.sessno,
+            '_dynSessConf': self.sess_no,
             '/ptk/sun/login/formhandler/LoginFormHandler.backUrl': '',
             '_D:/ptk/sun/login/formhandler/LoginFormHandler.backUrl': '',
             '/ptk/sun/login/formhandler/LoginFormHandler.hashMsisdn': '',
             '_D:/ptk/sun/login/formhandler/LoginFormHandler.hashMsisdn': '',
-            'login-form': purelogin,
+            'login-form': pure_login,
             '_D:login-form': '',
-            'password-form': purepassword,
+            'password-form': pure_password,
             '_D:password-form': '',
             'login-submit': 'zaloguj się',
             '_D:login-submit': '',
             '_DARGS': '/profile-processes/login/login.jsp.portal-login-form'
         }
-        slogin = self.s.post(
+        s_login = self.s.post(
             'https://www.njumobile.pl/logowanie?_DARGS=/profile-processes/login/login.jsp.portal-login-form#login-form-hash',
-            data = payloadlogin, headers = self.myheaders)
-        rlogin = slogin.text
-        requestid = str(re.search('id=(.*)', (slogin.url)).group(1))
-        loggedno = find_data(rlogin, 'span', 'class', 'sun-user-info__msisdn u-small-spacing-bottom u-small-spacing-top-l u-medium-left u-large-left', '')
-        print('-> Udało się, zalogowany numer to: %s' % (loggedno.text))
+            data = payload_login, headers = self.my_headers)
+        r_login = s_login.text
+        try:
+            request_id = str(re.search('id=(.*)', (s_login.url)).group(1))
+            logged_no = find_data(
+                r_login, 'span', 'class',
+                'sun-user-info__msisdn u-small-spacing-bottom u-small-spacing-top-l u-medium-left u-large-left', ''
+            )
 
-        """
-        IDK that this value below is necessary, but requests via browser sometimes have
-        this value. I assumed that it will be good, when this value will be presented
-        """
+            """
+            IDK that this value below is necessary, but requests via browser sometimes have
+            this value. I assumed that it will be good, when this value will be presented
+            """
+            print('-> Udało się, zalogowany numer to: %s' % (logged_no.text))
+        except AttributeError:
+            print('-> ERROR: Na pewno podales poprawne dane logowania?')
+            sys.exit(1)
+        else:
+            return request_id
 
-        return requestid
+    def logout_nju(
+            self):
 
-    def logout_nju(self):
-
-        payloadlogout = {
+        payload_logout = {
             '_dyncharset': 'UTF-8',
             'logout-submit': 'wyloguj się',
             '_D:logout-submit': '',
             '_DARGS': '/core/v3.0/navigation/account_navigation.jsp.portal-logout-form'
         }
-        slogout = self.s.post('https://www.njumobile.pl/?_DARGS=/core/v3.0/navigation/account_navigation.jsp.portal-logout-form',
-                              data = payloadlogout, headers = self.myheaders)
-        rlogout = slogout.text
-        logoutconfirm = find_data(rlogout, 'span', 'class', 'sun-header__link-inner', '')
+        s_logout = self.s.post(
+            'https://www.njumobile.pl/?_DARGS=/core/v3.0/navigation/account_navigation.jsp.portal-logout-form',
+            data = payload_logout, headers = self.my_headers
+        )
+        r_logout = s_logout.text
+        logout_confirm = find_data(r_logout, 'span', 'class', 'sun-header__link-inner', '')
 
-        if logoutconfirm is None:
-            print('-> Coś poszło nie tak, nie wylogowałem')
+        if logout_confirm is None:
+            print('-> ERROR: Coś poszło nie tak, nie wylogowałem')
+            sys.exit(1)
         else:
             print('-> Ok wylogowano')
 
         self.s.cookies.clear()
 
-    def stan_konta(self):
+    def stan_konta(
+            self):
 
         """
         In first version, script tried to find data on scraped page;
@@ -219,7 +235,7 @@ class EstablishConnection():
         while repeat < 5:
 
             print('-> Pobieram z ajaxowego requesta, próba %i' %(repeat))
-            paramsajax = {
+            params_ajax = {
                 'group': 'home-alerts-state-funds',
                 'toGet': 'home-alerts-state-funds',
                 'toUpdate': 'state-funds-infoservices',
@@ -230,7 +246,7 @@ class EstablishConnection():
                 'isMobile': 'false',
                 '_': '1518418491675'
             }
-            headersajax = {
+            headers_ajax = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0',
                 'Host': 'www.njumobile.pl',
                 'Accept': '*/*',
@@ -240,83 +256,88 @@ class EstablishConnection():
                 'DNT': '1',
                 'Accept-Language': 'pl,en-US;q=0.7,en;q=0.3'
             }
-            sbalanceajax  = self.s.get('https://www.njumobile.pl/ecare-infoservices/ajax',
-                                       params = paramsajax, headers = headersajax)
+            s_balance_ajax  = self.s.get(
+                'https://www.njumobile.pl/ecare-infoservices/ajax',
+                params = params_ajax, headers = headers_ajax
+            )
             #  Only for diagnostic purposes, enable this line if you want some debug
             #print(sbalanceajax.url)
-            rbalance = sbalanceajax.text
+            r_balance = s_balance_ajax.text
             #  Only for diagnostic purposes, enable this line if you want some debug
             #print(rbalance)
-            reachedvalue = find_data(rbalance, 'div', 'class', 'box-slider-info', '')
+            reached_value = find_data(r_balance, 'div', 'class', 'box-slider-info', '')
             #  Only for diagnostic purposes, enable this line if you want some debug
             #print(reachedvalue)
 
-            if reachedvalue is None:
+            if reached_value is None:
                 repeat = repeat+1
                 time.sleep(2)
                 if repeat > 4:
-                    print('-> Nie mogę pobrać danych, spróbuj uruchomić ponownie :(')
+                    print('-> ERROR: Nie mogę pobrać danych, spróbuj uruchomić ponownie :(')
             else:
-                reachedvaluepure = re.search('<div class="box-slider-info">(.*)</div>', str(reachedvalue))
+                reached_value_pure = re.search('<div class="box-slider-info">(.*)</div>', str(reached_value))
                 #  Only for diagnostic purposes, enable this line if you want some debug
                 #print(reachedvaluepure)
                 break
 
-        print('Aktualnie osiągnięty pułap płatności:%s\n' % (reachedvaluepure.group(1)))
-        webpackage = find_data(rbalance, 'p', 'class', 'text-right', '')
-        webpackagenumbers = ''.join((re.findall(r'\b\d+\b|\.|GB', str(webpackage))))
-        webpackagelist = webpackagenumbers.split('GB')
-        percentagemax = 100
-        percentageusagepl = round((((float(webpackagelist[0])) * 100) / float(webpackagelist[1])), 0)
-        percentagemaxdraw = int((percentagemax / 10) * 2)
-        percentageusagedrawpl = int((percentageusagepl / 10) * 2)
-        percentagegraphpl = ((percentageusagedrawpl * '#') + ((percentagemaxdraw - percentageusagedrawpl) * '-'))
+        print('Aktualnie osiągnięty pułap płatności:%s\n' % (reached_value_pure.group(1)))
+        webpackage = find_data(r_balance, 'p', 'class', 'text-right', '')
+        webpackage_numbers = ''.join((re.findall(r'\b\d+\b|\.|GB', str(webpackage))))
+        webpackage_list = webpackage_numbers.split('GB')
+        percentage_max = 100
+        percentage_usage_pl = round((((float(webpackage_list[0])) * 100) / float(webpackage_list[1])), 0)
+        percentage_max_draw = int((percentage_max / 10) * 2)
+        percentage_usage_draw_pl = int((percentage_usage_pl / 10) * 2)
+        percentage_graph_pl = ((percentage_usage_draw_pl * '#') + ((percentage_max_draw - percentage_usage_draw_pl) * '-'))
 
-        for char in percentagegraphpl:
+        for char in percentage_graph_pl:
             sys.stdout.write(char)
             sys.stdout.flush()
             time.sleep(0.2)
 
         print('\nPozostało %i procent pakietu w kraju (%s GB z %s GB)' % (
-        int(percentageusagepl), webpackagelist[0], webpackagelist[1]))
-        percentageusageeu = round((((float(webpackagelist[2])) * 100) / float(webpackagelist[3])), 0)
-        percentageusagedraweu = int((percentageusageeu / 10) * 2)
-        percentagegrapheu = ((percentageusagedraweu * '#') + ((percentagemaxdraw - percentageusagedraweu) * '-'))
+        int(percentage_usage_pl), webpackage_list[0], webpackage_list[1]))
+        percentage_usage_eu = round((((float(webpackage_list[2])) * 100) / float(webpackage_list[3])), 0)
+        percentage_usage_draw_eu = int((percentage_usage_eu / 10) * 2)
+        percentage_graph_eu = ((percentage_usage_draw_eu * '#') + ((percentage_max_draw - percentage_usage_draw_eu) * '-'))
 
-        for char in percentagegrapheu:
+        for char in percentage_graph_eu:
             sys.stdout.write(char)
             sys.stdout.flush()
             time.sleep(0.2)
 
         print('\nPozostało %i procent pakietu w krajach EU (%s GB z %s GB)'
-              % (int(percentageusageeu), webpackagelist[2], webpackagelist[3]))
+              % (int(percentage_usage_eu), webpackage_list[2], webpackage_list[3]))
 
-    def finanse(self, requestidno):
+    def finanse(
+            self, request_id_no):
 
         repeat = 1
         while repeat < 5:
 
             print('-> Pobieram z webowego requesta, próba %i' % (repeat))
-            sfinance = self.s.post(
-                ('https://www.njumobile.pl/mojekonto/faktury?_requestid=%s' %(requestidno)),
-                headers = self.myheaders)
-            rfinance = sfinance.text
+            s_finance = self.s.post(
+                ('https://www.njumobile.pl/mojekonto/faktury?_requestid=%s' %(request_id_no)),
+                headers = self.my_headers)
+            r_finance = s_finance.text
             #  Only for diagnostic purposes, enable this line if you want some debug
-            #print(sfinance.url)
-            #print(sfinance.headers)
-            cashdetails = find_all_data(rfinance, 'div', 'class', 'definition', '')
-            invoices = find_all_data(rfinance, 'td', 'class', 'left-right-bg', '')
+            #print(s_finance.url)
+            #print(s_finance.headers)
+            cash_details = find_all_data(r_finance, 'div', 'class', 'definition', '')
+            invoices = find_all_data(r_finance, 'td', 'class', 'left-right-bg', '')
 
-            if ((len(invoices) == 0) or (len(cashdetails) == 0)):
+            if ((len(invoices) == 0) or (len(cash_details) == 0)):
                 repeat = repeat + 1
                 time.sleep(2)
                 if repeat > 4:
-                    print('-> Nie mogę pobrać danych, spróbuj uruchomić ponownie :(')
+                    print('-> ERROR: Nie mogę pobrać danych, spróbuj uruchomić ponownie :(')
             else:
-                print('Aktualny stan konta: %s' % (cashdetails[0].text))
-                print('Ostatnia wpłata: %s' % (cashdetails[1].text))
-                print('\nNumer faktury  ::  Data wyst  ::  Okres od  ::  Okres do  '
-                      ':: Kwota :: Pozostało ::   Typ   :: Za okres :: Status ::')
+                print('Aktualny stan konta: %s' % (cash_details[0].text))
+                print('Ostatnia wpłata: %s' % (cash_details[1].text))
+                print(
+                    '\nNumer faktury  ::  Data wyst  ::  Okres od  ::  Okres do  '
+                      ':: Kwota :: Pozostało ::   Typ   :: Za okres :: Status ::'
+                )
 
                 """
                 Code below prints invoices. Each invoice have 10 properties;
@@ -394,25 +415,25 @@ Interaction with user
 
 print('========= LOGOWANIE =========')
 
-if os.path.exists(datafile) == True:
+if os.path.exists(data_file) == True:
     print('-> Plik z danymi logowania istnieje, kontynuje')
-    ulogindecoded, upassworddecoded = decode_data()
-    requestidno = P1.login_nju(ulogindecoded, upassworddecoded)
+    u_login_decoded, u_password_decoded = decode_data()
+    request_id_no = P1.login_nju(u_login_decoded, u_password_decoded)
 else:
-    ulogin = input('Podaj numer telefonu \n')
-    upassword = input('Podaj hasło \n')
+    u_login = input('Podaj numer telefonu \n')
+    u_password = input('Podaj hasło \n')
 
     while True:
 
         chose = input('Czy chcesz zachować dane logowania? [T]ak/[N]ie/[A]nuluj \n')
 
         if chose == 'T':
-            encode_data(ulogin, upassword)
-            requestidno = P1.login_nju(ulogin, upassword)
+            encode_data(u_login, u_password)
+            request_id_no = P1.login_nju(u_login, u_password)
             break
         elif chose == 'N':
             print('-> OK, nie zapisuje')
-            requestidno = P1.login_nju(ulogin, upassword)
+            request_id_no = P1.login_nju(u_login, u_password)
             break
         elif chose == 'A':
             print('-> Zamykam')
@@ -426,7 +447,7 @@ P1.stan_konta()
 
 print('========== FINANSE ==========')
 
-P1.finanse(requestidno)
+P1.finanse(request_id_no)
 
 print('======= WYLOGOWYWANIE =======')
 
