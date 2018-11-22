@@ -79,4 +79,4 @@ To remove configuration, delete the *database.dat* file in /yourdevicememory/qpy
 
 ## Thanks
 
-Thanks to my girlfriend for his patience when I was coding.
+Thanks to my girlfriend for her patience when I was coding.
