@@ -5,25 +5,25 @@ import re
 import os
 import sys
 import time
-from platform import uname
-import requests
-from datetime import datetime
-from bs4 import BeautifulSoup as bs4
 import getpass
 import argparse
+import requests
+from platform import uname
+from datetime import datetime
+from bs4 import BeautifulSoup as bs4
 
 
 def detect_platform():
 
     """
-    Detecting platform and set data_file variable.
+    Detecting platform and setting data_file variable.
     Especially for mobile devices (Android), where files
     can be stored only under special path.
     """
 
-    platform = uname()
+    platform = str(uname())
 
-    if 'Linux' in platform and 'arm' in platform:
+    if 'arm' in platform:
         data_file = '/storage/emulated/0/qpython/database.dat'
         print(u'-> Wykryto platformę mobilną')
     else:
@@ -36,12 +36,12 @@ def detect_platform():
 def find_data(soup, tag_type, tag_parameter, tag_name, *value_type):
 
     """
-    Find data using beautiful soup.
+    Finding data using beautiful soup.
     Args:
         soup - parsed html data,
-        tag_type - type of tag (for example: div, span etc.)
-        tag_parameter - second parameter of tag (for example: class, id etc.)
-        tag_name - name of parameter (for example header, footer)
+        tag_type - type of tag (for example: div, span etc.),
+        tag_parameter - second parameter of tag (for example: class, id etc.),
+        tag_name - name of parameter (for example header, footer),
         tag_value - optional parameter, specified value from tag.
     """
 
@@ -54,13 +54,13 @@ def find_data(soup, tag_type, tag_parameter, tag_name, *value_type):
 def print_pretty(curr_value, max_value):
 
     """
-    Print simple diagram using ASCII chars.
+    Printing simple diagram using ASCII chars.
     Args:
          curr_value - value to be printed
          max_value - maximal value that can curr_value can reach
 
     Both values are recalculated to percentage value.
-    One printed character represent 5%
+    One printed character represent 5%.
     """
 
     curr_percentage = curr_value * 100.0 / max_value
@@ -85,14 +85,14 @@ class UserData:
     Class for creating user object.
     Args:
         username - phone number,
-        password - password set by user during account register,
+        password - password set by user during account registering,
         data_file - path to store encrypted login and password
 
-    reset() - delete saved configuration - if exists,
+    reset() - deleting saved configuration - if exists,
     Method must be static, because calling this function without creating UserData object is necessary.
-    encode_data() - encode password using char integer calculation, multiplied by salt.
-    save_data() - write login, encoded password and salt to file,
-    decode_data() - decode values stored in a configuration file (especially password).
+    encode_data() - encoding password using char-to-integer calculation, multiplied by salt.
+    save_data() - writing login, encoded password and salt to file,
+    decode_data() - decoding values stored in a configuration file (especially password).
     Method must be static, because calling this function without creating UserData object is necessary.
     """
 
@@ -144,7 +144,7 @@ class UserData:
             print('-> Początek procedury dehashowania')
             # Find salted password
             salted_pass = re.search('\[(.*)\]', line).group(1).split(',')
-            # Find salt and prepare
+            # Find salt and prepare (multiply by 2, because on decode_data() salt was divided by 2)
             salt = float(re.search('\](.*)', line).group(1))*2
             # Divide every char by salt, change to integer and get ASCII code from integer
             password_dec = ''.join([chr(int(c)) for c in [float(c) / salt for c in salted_pass]])
@@ -160,14 +160,14 @@ class Connection:
     Args:
         none
 
-    login() - open's login site and get _dynSessConf parameter, which is necessary to login.
+    login() - opening login site and get _dynSessConf parameter, which is necessary to login.
     In next step data is send to remote server using POST request. The result is verified.
     logout() - logout from site. Result is verified.
-    get_balance() - fetch data using ajax request. Sometimes first request is not successful;
+    get_balance() - fetching data using ajax request. Sometimes first request is not successful;
     function will try 3 times to get the data.
-    get_invoices() - fetch all invoices details from site.
+    get_invoices() - fetching all invoices details from site.
 
-    Important: to keep compatibility with function find_data(), all responses from serve should be first parsed
+    Important: to keep compatibility with function find_data(), all responses from server should be first parsed
     by beautiful soup: bs4(response, 'html.parser')
 
     """
@@ -305,9 +305,10 @@ class Result:
     Args:
         none
 
-    balance_status() - find data in ajax response (current period, rate, rate description, cash amount and data-transfer package size).
-    invoices_status() - find last three invoices, and all details for them. Present detailed data only
-    for unpaid invoice.
+    balance_status() - finding data in ajax response (current period, rate, rate description,
+    cash amount and data-transfer package size).
+    invoices_status() - finding last three invoices, and all details for them.
+    Presenting detailed data only for unpaid invoice(s).
     """
 
     def balance_status(self, html_resp):
@@ -319,18 +320,25 @@ class Result:
         offer_title = rate.find("strong", recursive=False)
         curr_amount = find_data(bal_soup, 'div', 'class', 'box-slider-info')
         # Find all values in phrase (together with decimal values, if presented)
-        curr_transfer = [float(x) for x in re.findall('\d{1,2}\.?\d{0,2}',
-                                                      find_data(bal_soup, 'p', 'class', 'text-right').text)]
+        curr_transfer = [
+            float(x) for x in re.findall('\d{1,2}\.?\d{0,2}', find_data(bal_soup, 'p', 'class', 'text-right').text)
+        ]
         print(u'= STAN KONTA =')
         print(u'-> Koniec okresu rozliczeniowego:{}'.format(period_end.text))
         print(u'-> Nazwa oferty: {}'.format(offer_title.text))
         print(u'-> Aktualnie osiagnięty pułap płatności:%s' % curr_amount.text)
         # Format all values to two decimal places
-        print(u'-> Wykorzystanie internetu (kraj): dostępne {:2.{prec}f} GB z {:2.{prec}f} GB'.format(
-            curr_transfer[0], curr_transfer[1], prec=2))
+        print(
+            u'-> Wykorzystanie internetu (kraj): dostępne {:2.{prec}f} GB z {:2.{prec}f} GB'.format(
+                curr_transfer[0], curr_transfer[1], prec=2
+            )
+        )
         print_pretty(curr_transfer[0], curr_transfer[1])
-        print(u'-> Wykorzystanie internetu (EU): dostępne {:2.{prec}f} GB z {:2.{prec}f} GB'.format(
-            curr_transfer[2], curr_transfer[3], prec=2))
+        print(
+            u'-> Wykorzystanie internetu (EU): dostępne {:2.{prec}f} GB z {:2.{prec}f} GB'.format(
+                curr_transfer[2], curr_transfer[3], prec=2
+            )
+        )
         print_pretty(curr_transfer[2], curr_transfer[3])
 
     def invoices_status(self, html_resp):
@@ -376,6 +384,7 @@ class Result:
                     for key, value in inv.items():
 
                         print(u'|| {}: {}'.format(key, value))
+
                 # If paid - show only number and status
                 else:
 
@@ -388,7 +397,7 @@ class Result:
 def main():
 
     script = sys.argv[0]
-    desc = u'NjuScript2, (c) 2018'
+    desc = u'njuscript 1.1 (c) 2018'
 
     # Argparse for better manage of arguments
     parser = argparse.ArgumentParser(prog=script, description=desc)
