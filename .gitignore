@@ -1,0 +1,6 @@
+#Ignore selected project-files
+.idea/
+*.log
+*.pot
+*.pyc
+*.dat
