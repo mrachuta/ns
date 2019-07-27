@@ -68,7 +68,7 @@ def print_pretty(curr_value, max_value):
     graph_curr = int(round(curr_percentage / 5.0, 0))
     graph_max = int(100.0 / 5.0)
 
-    usage_graph = (graph_max * '#' + ((graph_max - graph_curr) * '-'))
+    usage_graph = (graph_curr * '#' + ((graph_max - graph_curr) * '-'))
 
     for char in usage_graph:
         sys.stdout.write(char)
