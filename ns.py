@@ -216,8 +216,7 @@ class Connection:
             logged_soup = bs4(login_req_resp, 'html.parser')
 
             logged_no = find_data(
-                logged_soup, 'span', 'class',
-                'sun-user-info__msisdn u-small-spacing-bottom u-small-spacing-top-l u-medium-left u-large-left')
+                logged_soup, 'li', 'class', 'cf title-dashboard-summary')
 
             print(u'-> Udało się, zalogowany numer to: {}'.format(logged_no.text))
         except AttributeError:
