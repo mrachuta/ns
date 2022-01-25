@@ -16,8 +16,8 @@ from bs4 import BeautifulSoup as bs4
 def detect_platform():
 
     """
-    Detecting platform and setting data_file variable.
-    Especially for mobile devices (Android), where files
+    Detect platform and set data_file variable.
+    Especially useful for mobile devices (Android), where files
     can be stored only under special path.
     """
 
@@ -36,7 +36,7 @@ def detect_platform():
 def find_data(soup, tag_type, tag_parameter, tag_name, *value_type):
 
     """
-    Finding data using beautiful soup.
+    Find data using beautiful soup.
     Args:
         soup - parsed html data,
         tag_type - type of tag (for example: div, span etc.),
@@ -54,7 +54,7 @@ def find_data(soup, tag_type, tag_parameter, tag_name, *value_type):
 def print_pretty(curr_value, max_value):
 
     """
-    Printing simple diagram using ASCII chars.
+    Print simple diagram using ASCII chars.
     Args:
          curr_value - value to be printed
          max_value - maximal value that can curr_value can reach
@@ -82,18 +82,16 @@ def print_pretty(curr_value, max_value):
 class UserData:
 
     """
-    Class for creating user object.
+    Class creates user object.
     Args:
         username - phone number,
         password - password set by user during account registering,
         data_file - path to store encrypted login and password
 
-    reset() - deleting saved configuration - if exists,
-    Method must be static, because calling this function without creating UserData object is necessary.
-    encode_data() - encoding password using char-to-integer calculation, multiplied by salt.
-    save_data() - writing login, encoded password and salt to file,
-    decode_data() - decoding values stored in a configuration file (especially password).
-    Method must be static, because calling this function without creating UserData object is necessary.
+    reset() - delete saved configuration - if exists.
+    encode_data() - encode password using char-to-integer calculation, multiplied by salt.
+    save_data() - write login, encoded password and salt to file,
+    decode_data() - decode values stored in a configuration file (especially password).
     """
 
     def __init__(self, username, password, data_file):
@@ -123,7 +121,7 @@ class UserData:
         hashed_pass = [ord(c) for c in self.password]
         # Salt password
         salted_pass = [salt * c for c in hashed_pass]
-        # Divide salt for make reading password harder
+        # Divide salt to make password more complicated
         salt = salt / 2
         return salt, salted_pass
 
@@ -146,7 +144,7 @@ class UserData:
             salted_pass = re.search('\[(.*)\]', line).group(1).split(',')
             # Find salt and prepare (multiply by 2, because on decode_data() salt was divided by 2)
             salt = float(re.search('\](.*)', line).group(1))*2
-            # Divide every char by salt, change to integer and get ASCII code from integer
+            # Divide every char by salt, convert to integer and get ASCII code from integer
             password_dec = ''.join([chr(int(c)) for c in [float(c) / salt for c in salted_pass]])
             print('-> Koniec procedury dehashowania')
             return username_dec, password_dec
@@ -155,19 +153,19 @@ class UserData:
 class Connection:
 
     """
-    Class for communication with njumobile website.
-    Every request is made during the same session.
+    Class creates connection to njumobile website.
+    Every request is created within one session.
     Args:
         none
 
-    login() - opening login site and get _dynSessConf parameter, which is necessary to login.
-    In next step data is send to remote server using POST request. The result is verified.
+    login() - open login site and get _dynSessConf parameter, which is necessary to login.
+    In next step data is sending to remote server using POST request. The result is verified.
     logout() - logout from site. Result is verified.
-    get_balance() - fetching data using ajax request. Sometimes first request is not successful;
+    get_balance() - fetch data using ajax request. Sometimes first request is not successful;
     function will try 3 times to get the data.
-    get_invoices() - fetching all invoices details from site.
+    get_invoices() - fetch all invoices details from site.
 
-    Important: to keep compatibility with function find_data(), all responses from server should be first parsed
+    Important: to keep compatibility with function find_data(), all responses from server should be at beginning parsed
     by beautiful soup: bs4(response, 'html.parser')
 
     """
@@ -189,7 +187,7 @@ class Connection:
 
         login_soup = bs4(login_resp, 'html.parser')
 
-        # Get _dynSessConf value from site (prevention from automated logins)
+        # Get _dynSessConf value from source code
         sess_no = find_data(login_soup, 'input', 'name',  '_dynSessConf', 'value')
 
         payload_login = {
@@ -211,7 +209,7 @@ class Connection:
         login_req = self.ses.post('https://www.njumobile.pl/logowanie', data=payload_login, headers=self.ns_headers)
         login_req_resp = login_req.text
 
-        # Check, that login is successful
+        # Check if login is successful
         try:
             logged_soup = bs4(login_req_resp, 'html.parser')
 
@@ -241,7 +239,7 @@ class Connection:
 
         logout_confirm = find_data(logout_soup, 'span', 'class', 'sun-header__link-inner')
 
-        # Check, that logout is successful
+        # Check if logout is successful
         if logout_confirm is None:
             sys.exit(u'-> BŁĄD: Coś poszło nie tak, nie wylogowałem')
         else:
@@ -274,7 +272,6 @@ class Connection:
             'Accept-Language': 'pl,en-US;q=0.7,en;q=0.3'
         }
 
-        # Try to get data 3 times
         repeat = 1
         while repeat < 4:
 
@@ -300,14 +297,14 @@ class Connection:
 class Result:
 
     """
-    Class for parsing data, and extract intresting values.
+    Class parse data and extract required values.
     Args:
         none
 
-    balance_status() - finding data in ajax response (current period, rate, rate description,
+    balance_status() - find data in ajax response (current period, rate, rate description,
     cash amount and data-transfer package size).
-    invoices_status() - finding last three invoices, and all details for them.
-    Presenting detailed data only for unpaid invoice(s).
+    invoices_status() - find last three invoices, and all details for them.
+    Provide detailed data only for unpaid invoice(s).
     """
 
     def balance_status(self, html_resp):

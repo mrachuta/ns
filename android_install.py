@@ -28,7 +28,7 @@ def install_ns():
     print(u'-> Platforma: {}'.format(platform))
     print(u'-> Wersja Pythona: {}'.format(python_ver))
 
-    # Check, that script running on ARM device
+    # Check if script is running on ARM device
     if 'arm' not in platform:
 
         print(u'-> Niewspierana platforma, uruchom na Android')
@@ -59,7 +59,7 @@ def install_ns():
 if __name__ == '__main__':
 
     # If PYTHONHTTPSVERIFY=0, create unverified SSL connection,
-    # for prevent 'SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed'.
+    # to prevent 'SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed'.
     if not os.environ.get('PYTHONHTTPSVERIFY', '') and getattr(ssl, '_create_unverified_context', None):
         ssl._create_default_https_context = ssl._create_unverified_context
 
