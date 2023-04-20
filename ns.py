@@ -158,15 +158,14 @@ class Connection:
     Args:
         none
 
-    login() - open login site and get _dynSessConf parameter, which is necessary to login.
-    In next step data is sending to remote server using POST request. The result is verified.
-    logout() - logout from site. Result is verified.
+    login() - open login site and get _dynSessConf parameter, that is required to login.
+    logout() - logout from site.
     get_balance() - fetch data using ajax request. Sometimes first request is not successful;
     function will try 3 times to get the data.
-    get_invoices() - fetch all invoices details from site.
+    get_invoices() - fetch all invoices-details from site.
 
-    Important: to keep compatibility with function find_data(), all responses from server should be at beginning parsed
-    by beautiful soup: bs4(response, 'html.parser')
+    Important: to keep compatibility with function find_data(), all responses from server should be 
+    at beginning parsed by beautiful soup: bs4(response, 'html.parser')
 
     """
 
@@ -462,4 +461,3 @@ def main():
 if __name__ == "__main__":
 
     main()
-

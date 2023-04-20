@@ -14,7 +14,8 @@ njuscript (ns) - polish mobile provider account-balance checker.
   - [Mobile](#mobile)
 
 ## General info
-Due to the worst app that I have ever used in my life for check current balance, I have created a simple script which download and print all necessary informations. It is faster than official Nju Mobile app.
+Official nju mobile app is the worst app that I have ever used.
+As replacement, I have created a simple script which download and print all necessary informations. It is faster than official Nju Mobile app.
 
 ## Technologies
 Code was written as a Python 3 code.
