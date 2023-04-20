@@ -392,7 +392,7 @@ class Result:
 def main():
 
     script = sys.argv[0]
-    desc = u'njuscript 1.1 (c) 2018'
+    desc = u'njuscript 1.1.1 (c) 2023'
 
     # Argparse for better manage of arguments
     parser = argparse.ArgumentParser(prog=script, description=desc)
