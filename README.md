@@ -2,14 +2,20 @@
 njuscript (ns) - polish mobile provider account-balance checker.  
 
 ## Table of contents
-* [General info](#general-info)
-* [Technologies](#technologies)
-* [Setup](#setup)
-* [Using](#using)
-* [Thanks](#thanks)
+- [Project name](#project-name)
+- [Table of contents](#table-of-contents)
+- [General info](#general-info)
+- [Technologies](#technologies)
+- [Setup](#setup)
+  - [Desktop](#desktop)
+  - [Android](#android)
+- [Usage](#usage)
+  - [Desktop](#desktop-1)
+  - [Mobile](#mobile)
 
 ## General info
-Due to the worst app that I have ever used in my life for check current balance, I have created a simple script which download and print all necessary informations. It is huge faster than official Nju Mobile app.
+Official nju mobile app is the worst app that I have ever used.
+As replacement, I have created a simple script which download and print all necessary informations. It is faster than official Nju Mobile app.
 
 ## Technologies
 Code was written as a Python 3 code.
@@ -19,6 +25,7 @@ Code was tested on following platform:
 * Widows 8.1 (x64) with Python 3.7.1
 * Android 8.0 (Galaxy S7) with Python 3.6.4 (QPython)
 * Android 8.1.1 (Galaxy XCover 4) with Python 3.6.6 (QPython)
+* Androind 11 (Realme 7Pro) with Python 3.6.6 (QPython)
 
 Used libraries:
 * Package and version   
@@ -58,13 +65,13 @@ b) switch interpreter to Python 3.6 (click "more" and chose Python interpreter -
     ```
     /yourdevicememory/qpython/scripts3
     ```
-    where 'yourdevicememory' is root catalogue of internal memory in your mobile phone.
+    where 'yourdevicememory' is root dir of internal memory in your mobile phone.
     (QPython has very limited packages database, for example: app can't compile some files for requests library and bs4 library using pip module, so my proposal is to copy precompiled files directly to specific path. Installer will do this automatically and QPython will use them without any problems).
 4. Run QPython and click on the icon on the middle-top of application, you will see the *android_install.py* script.
 5. Run script
 6. Go again to the previous screen. You will se new file - *ns.py*. Long-click on *ns.py*, and add link to main screen.  
 
-## Using
+## Usage
 
 ### Desktop
 To run app just put on command line:
@@ -86,7 +93,3 @@ in
 /yourdevicememory/qpython/
 ```
 or add *-c* to script while running.
-
-## Thanks
-
-Thanks to my girlfriend for her patience when I was coding.
