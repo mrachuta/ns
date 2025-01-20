@@ -8,68 +8,54 @@ njuscript (ns) - polish mobile provider account-balance checker.
 - [Technologies](#technologies)
 - [Setup](#setup)
   - [Desktop](#desktop)
-  - [Android](#android)
+  - [Mobile](#mobile)
 - [Usage](#usage)
   - [Desktop](#desktop-1)
-  - [Mobile](#mobile)
+  - [Mobile](#mobile-1)
 
 ## General info
 Official nju mobile app is the worst app that I have ever used.
-As replacement, I have created a simple script which download and print all necessary informations. It is faster than official Nju Mobile app.
+As a replacement, I have created a simple script which download and print most important account details (account balance and pending payments). It is definitely faster than official Nju Mobile app.
 
 ## Technologies
-Code was written as a Python 3 code.
+Code is pure Python 3.
 
 Code was tested on following platform:
-* Debian Wheezy (kernel 4.18.0-2 amd64) with Python 3.6.6
-* Widows 8.1 (x64) with Python 3.7.1
-* Android 8.0 (Galaxy S7) with Python 3.6.4 (QPython)
-* Android 8.1.1 (Galaxy XCover 4) with Python 3.6.6 (QPython)
-* Androind 11 (Realme 7Pro) with Python 3.6.6 (QPython)
+* Arch Linux (rolling release, Python 3.13.1)
+* Android 14, Python 3.11.9
 
-Used libraries:
-* Package and version   
-* beautifulsoup4 4.6.3     
-* bs4            0.0.1     
-* certifi        2018.10.15
-* chardet        3.0.4     
-* idna           2.7       
-* pip            18.1      
-* requests       2.20.0    
-* setuptools     40.5.0    
-* urllib3        1.24.1    
-* wheel          0.32.2   
+Packages required to run app are available in *requirements.txt*
 
 ## Setup
 
 ### Desktop
-For using on desktop platforms (Linux, Windows) you will need only to install required packages.
+To use on desktop platforms (Linux, Windows) you will need to follow these steps:
 
-### Android
-For using on mobile-platforms (Android) you will need to follow these steps:  
+1. Clone repository
+2. Run following command to install required packages
+    ```
+    cd ns
+    pip install -r requirements.txt
+    ```
 
-1. Install applications as following (suggested from Google Play Store):
-    ```
-    QPython - Python for Android
-    QPy3.6 - Python 3.6 for QPython
-    ```
-2. Run QPython and:  
-a) If you want to store login and password for faster check balance, click "ALLOW" when app shows question about permission to files (otherwise you will receive error in app, when you will try to save data),  
-b) switch interpreter to Python 3.6 (click "more" and chose Python interpreter - you will need also to download some resources, but app will do this automatically).  
+### Mobile
+To use on Android you will need to follow these steps:  
 
-3. Copy file:
+1. Install following application from Google Play Store: [QPython](https://play.google.com/store/apps/details?id=org.qpython.qpy&hl=en)
+2. Run QPython, tap "QPyPi" button and select "Pip Client"
+3. Paste following command and run to install required packages:
     ```
-    android_install.py
+    pip install -r https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v1.2.0/requirements.txt
     ```
-    to following path (if folder does not exists, create it):
+4. After installation, back to main screen and tap "Terminal"
+5. Paste following command and run to get script:
     ```
-    /yourdevicememory/qpython/scripts3
+    import os, requests; p = "{0}/scripts3/ns".format(os.environ["ANDROID_PUBLIC"]); os.makedirs(p, exist_ok=True); r = requests.get('https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v1.2.0/ns.py'); file = open("{0}/ns.py".format(p), 'wb'); file.write(r.content); file.close()
+
     ```
-    where 'yourdevicememory' is root dir of internal memory in your mobile phone.
-    (QPython has very limited packages database, for example: app can't compile some files for requests library and bs4 library using pip module, so my proposal is to copy precompiled files directly to specific path. Installer will do this automatically and QPython will use them without any problems).
-4. Run QPython and click on the icon on the middle-top of application, you will see the *android_install.py* script.
-5. Run script
-6. Go again to the previous screen. You will se new file - *ns.py*. Long-click on *ns.py*, and add link to main screen.  
+6. Back to main screen and click buton at the top-middle of screen to open box with scripts
+7. Hold your finger on the "ns.py" object and select "Create Shortcut" to make shortcut on desktop.
+8. Run script from shortcut
 
 ## Usage
 
@@ -78,18 +64,18 @@ To run app just put on command line:
 ```
 python ns.py
 ```
-If you want to delete previous configuration (login and password), add option *-c*:
+
+If you want to delete previous configuration (login and password), perform following command:
 ```
 python ns.py -c
 ```
 ### Mobile
 To run app just click on created link on main screen.  
-To remove configuration, delete file
-```
-database.dat
-```
-in
-``` 
-/yourdevicememory/qpython/
-```
-or add *-c* to script while running.
+
+To remove configuration:
+1. Go to QPython's main screen
+2. Hold your finger on the "ns.py" object and select "Run with params"
+3. Add following param and run:
+    ```
+    -c
+    ```
