@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-# -*- coding: UTF-8 -*-
+#!/usr/bin/env python3
 
 import re
 import os
@@ -43,7 +42,10 @@ class EncoderDecoder:
         self.password_encoded = password_salted
         self.salt = salt
 
-    def decode_data(self, username_encoded, password_encoded, salt):
+    def decode_data(self, username_encoded=None, password_encoded=None, salt=None):
+        if all(v is None for v in [username_encoded, password_encoded, salt]):
+            raise ValueError("BŁĄD: Parametr username i/lub password nie mogą być None")
+
         self.username = (base64.b64decode(username_encoded.encode("ascii"))).decode(
             "ascii"
         )
@@ -122,10 +124,11 @@ class NjuAccount(EncoderDecoder):
         self.pending_payment_output = None
 
     def login(self):
-        self.decode_data(self.username_encoded, self.password_encoded, self.salt)
-
-        if self.username is None or self.password is None:
-            raise ValueError("BŁĄD: Parametr username i/lub password nie mogą być None")
+        self.decode_data(
+            username_encoded=self.username_encoded,
+            password_encoded=self.password_encoded,
+            salt=self.salt,
+        )
 
         login_site = self.ses.get(
             "https://www.njumobile.pl/logowanie", headers=self.ns_headers
@@ -168,7 +171,7 @@ class NjuAccount(EncoderDecoder):
 
             print("-> Udało się, zalogowany numer to: {}".format(logged_no.text))
         except AttributeError:
-            sys.exit("BŁĄD: Na pewno podałeś poprawne dane logowania?")
+            raise AttributeError("BŁĄD: Na pewno podałeś poprawne dane logowania?")
 
     def logout(self):
 
@@ -192,7 +195,7 @@ class NjuAccount(EncoderDecoder):
 
         # Check if logout is successful
         if logout_confirm is None:
-            sys.exit("BŁĄD: Coś poszło nie tak, nie wylogowałem się poprawnie")
+            raise SystemError("BŁĄD: Coś poszło nie tak, nie wylogowałem się poprawnie")
         else:
             print("-> Wylogowano")
 
@@ -252,7 +255,13 @@ class Parser:
         self._raw_input = raw_input
 
     @staticmethod
-    def print_pretty(current_value, max_value):
+    def print_pretty(current_value=None, max_value=None):
+        if not (isinstance(current_value, (int, float))) or not (
+            isinstance(max_value, (int, float))
+        ):
+            raise ValueError(
+                "BŁĄD: Parametr current_value i/lub max_value muszą być typu int lub float"
+            )
 
         current_value_percentage = current_value * 100.0 / max_value
 
@@ -297,13 +306,17 @@ class Parser:
                 current_transfer[0], current_transfer[1], prec=2
             )
         )
-        self.print_pretty(current_transfer[0], current_transfer[1])
+        self.print_pretty(
+            current_value=current_transfer[0], max_value=current_transfer[1]
+        )
         print(
             "-> Wykorzystanie internetu (EU): dostępne {:2.{prec}f} GB z {:2.{prec}f} GB".format(
                 current_transfer[2], current_transfer[3], prec=2
             )
         )
-        self.print_pretty(current_transfer[2], current_transfer[3])
+        self.print_pretty(
+            current_value=current_transfer[2], max_value=current_transfer[3]
+        )
 
     def print_pending_payment_status(self):
 
