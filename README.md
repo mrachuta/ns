@@ -45,12 +45,12 @@ To use on Android you will need to follow these steps:
 2. Run QPython, tap "QPyPi" button and select "Pip Client"
 3. Paste following command and run to install required packages:
     ```
-    pip install -r https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v1.2.0/requirements.txt
+    pip install -r https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v2.0.0/requirements.txt
     ```
 4. After installation, back to main screen and tap "Terminal"
 5. Paste following command and run to get script:
     ```
-    import os, requests; p = "{0}/scripts3/ns".format(os.environ["ANDROID_PUBLIC"]); os.makedirs(p, exist_ok=True); r = requests.get('https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v1.2.0/ns.py'); file = open("{0}/ns.py".format(p), 'wb'); file.write(r.content); file.close()
+    import os, requests; p = "{0}/scripts3/ns".format(os.environ["ANDROID_PUBLIC"]); os.makedirs(p, exist_ok=True); r = requests.get('https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v2.0.0/ns.py'); file = open("{0}/ns.py".format(p), 'wb'); file.write(r.content); file.close(); print('Script installed successfully in following location: {0}'.format(p));
 
     ```
 6. Back to main screen and click buton at the top-middle of screen to open box with scripts
@@ -74,8 +74,9 @@ To run app just click on created link on main screen.
 
 To remove configuration:
 1. Go to QPython's main screen
-2. Hold your finger on the "ns.py" object and select "Run with params"
-3. Add following param and run:
+2. Click buton at the top-middle of screen to open box with scripts
+3. Hold your finger on the "ns.py" object and select "Run with params"
+4. Add following param and run:
     ```
     -c
     ```

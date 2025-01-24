@@ -1,5 +1,4 @@
-#!/usr/bin/python3
-# -*- coding: UTF-8 -*-
+#!/usr/bin/env python3
 
 import re
 import os
@@ -8,157 +7,112 @@ import time
 import getpass
 import argparse
 import requests
+import base64
 from datetime import datetime
 from bs4 import BeautifulSoup as bs4
 
-def find_data(soup, tag_type, tag_parameter, tag_name, *value_type):
-    """
-    Find data using beautiful soup.
-    Args:
-        soup - parsed html data,
-        tag_type - type of tag (for example: div, span etc.),
-        tag_parameter - second parameter of tag (for example: class, id etc.),
-        tag_name - name of parameter (for example header, footer),
-        tag_value - optional parameter, specified value from tag.
-    """
 
-    if value_type:
-        return soup.find(tag_type, {tag_parameter: tag_name})[value_type[0]]
-    else:
-        return soup.find(tag_type, {tag_parameter: tag_name})
-    
-def find_all_data(soup, tag_type, tag_parameter, tag_name):
-    """
-    Find data using beautiful soup.
-    Args:
-        soup - parsed html data,
-        tag_type - type of tag (for example: div, span etc.),
-        tag_parameter - second parameter of tag (for example: class, id etc.),
-        tag_name - name of parameter (for example header, footer),
-    """
-
-    return soup.findAll(tag_type, {tag_parameter: tag_name})
-
-
-def print_pretty(curr_value, max_value):
-    """
-    Print simple diagram using ASCII chars.
-    Args:
-         curr_value - value to be printed
-         max_value - maximal value that can curr_value can reach
-
-    Both values are recalculated to percentage value.
-    One printed character represent 5%.
-    """
-
-    curr_percentage = curr_value * 100.0 / max_value
-
-    graph_curr = int(round(curr_percentage / 5.0, 0))
-    graph_max = int(100.0 / 5.0)
-
-    usage_graph = graph_curr * "#" + ((graph_max - graph_curr) * "-")
-
-    for char in usage_graph:
-        sys.stdout.write(char)
-        sys.stdout.flush()
-        # change this value, to print diagram slower
-        time.sleep(0.1)
-
-    print(" (dostępne: {:2.2f}%)".format(curr_percentage))
-
-
-class UserData:
-    """
-    Class creates user object.
-    Args:
-        username - phone number,
-        password - password set by user during account registering,
-        data_file - path to store encrypted login and password
-
-    reset() - delete saved configuration - if exists.
-    encode_data() - encode password using char-to-integer calculation, multiplied by salt.
-    save_data() - write login, encoded password and salt to file,
-    decode_data() - decode values stored in a configuration file (especially password).
-    """
-
-    def __init__(self, username, password, data_file):
-        self.username = username
-        self.password = password
-        self.data_file = data_file
-
-    @staticmethod
-    def reset():
-
-        print("-> Usuwam domyślną konfigurację")
-
-        data_file = "database.dat"
-
-        if os.path.exists(data_file):
-            os.remove(data_file)
-        else:
-            print("-> Nie ma takiego pliku!")
-
-    def encode_data(self):
-
-        print("-> Początek procedury hashowania")
-        curr_time = datetime.now()
-        # Save current time as float
-        salt = float(curr_time.strftime("%H%M%S"))
-        # Calculate integer for every char in password
-        hashed_pass = [ord(c) for c in self.password]
-        # Salt password
-        salted_pass = [salt * c for c in hashed_pass]
-        # Divide salt to make password more complicated
-        salt = salt / 2
-        return salt, salted_pass
-
-    def save_data(self, salt, salted_pass):
-
-        data_file = open(self.data_file, "w")
-        data_file.write(self.username + str(salted_pass) + str(salt) + "\n")
-        data_file.close()
-
-    @staticmethod
-    def decode_data(data_file):
-
-        data_file = open(data_file, "r")
-        for line in data_file:
-
-            # Find username
-            username_dec = re.search("(.*)\[", line).group(1)
-            print("-> Początek procedury dehashowania")
-            # Find salted password
-            salted_pass = re.search("\[(.*)\]", line).group(1).split(",")
-            # Find salt and prepare (multiply by 2, because on decode_data() salt was divided by 2)
-            salt = float(re.search("\](.*)", line).group(1)) * 2
-            # Divide every char by salt, convert to integer and get ASCII code from integer
-            password_dec = "".join(
-                [chr(int(c)) for c in [float(c) / salt for c in salted_pass]]
-            )
-            print("-> Koniec procedury dehashowania")
-            return username_dec, password_dec
-
-
-class Connection:
-    """
-    Class creates connection to njumobile website.
-    Every request is created within one session.
-    Args:
-        none
-
-    login() - open login site and get _dynSessConf parameter, that is required to login.
-    logout() - logout from site.
-    get_balance() - fetch data using ajax request. Sometimes first request is not successful;
-    function will try 3 times to get the data.
-    get_invoices() - fetch all invoices-details from site.
-
-    Important: to keep compatibility with function find_data(), all responses from server should be
-    at beginning parsed by beautiful soup: bs4(response, 'html.parser')
-
-    """
+class EncoderDecoder:
 
     def __init__(self):
+        self.username = None
+        self.password = None
+        self.username_encoded = None
+        self.password_encoded = None
+        self.salt = None
 
+    def encode_data(self, username_input=None, password_input=None):
+
+        if username_input is None or password_input is None:
+            raise ValueError("BŁĄD: Parametr username i/lub password nie mogą być None")
+
+        print("-> Początek procedury enkodowania")
+        # Username as base64
+        username_encoded = (base64.b64encode(username_input.encode("ascii"))).decode(
+            "ascii"
+        )
+        # Calculate integer for every char in password
+        password_encoded = [ord(c) for c in password_input]
+        current_time = datetime.now()
+        salt = current_time.strftime("%H%M%S")
+        # Salt password and convert to string
+        password_salted = ".".join([str(int(c) * int(salt)) for c in password_encoded])
+
+        self.username_encoded = username_encoded
+        self.password_encoded = password_salted
+        self.salt = salt
+
+    def decode_data(self, username_encoded=None, password_encoded=None, salt=None):
+        if all(v is None for v in [username_encoded, password_encoded, salt]):
+            raise ValueError("BŁĄD: Parametr username i/lub password nie mogą być None")
+
+        self.username = (base64.b64decode(username_encoded.encode("ascii"))).decode(
+            "ascii"
+        )
+        password_encoded_splitted = password_encoded.split(".")
+        self.password = "".join(
+            [
+                chr(int(c))
+                for c in [int(c) / int(salt) for c in password_encoded_splitted]
+            ]
+        )
+
+
+class UserData(EncoderDecoder):
+
+    def __init__(self):
+        self.data_file = "database.dat"
+
+    def _save_encoded_data_to_file(self):
+        with open(self.data_file, "w") as f:
+            f.write(
+                "{0}&%{1}%&{2}".format(
+                    self.username_encoded, self.password_encoded, self.salt
+                )
+            )
+
+    def _get_encoded_data_from_file(self):
+        f = open(self.data_file, "r")
+        for line in f:
+            # Find username
+            self.username_encoded = re.search("^(.*)&%", line).group(1)
+            # Find salted password
+            self.password_encoded = re.search("&%(.*)%&", line).group(1)
+            # Find salt
+            self.salt = re.search("%&(.*)$", line).group(1)
+
+    def get_credentials(self, username_input=None, password_input=None):
+        if username_input is None or password_input is None:
+            raise ValueError("BŁĄD: Parametr username i/lub password nie mogą być None")
+
+        self.encode_data(username_input=username_input, password_input=password_input)
+
+    def get_credentials_from_file(self):
+        print("-> Znaleziono plik z zapisanymi danymi logowania")
+        self._get_encoded_data_from_file()
+
+    def save_credentials_to_file(self):
+        print("-> Wybrano opcje zapisania danych logowania")
+        self._save_encoded_data_to_file()
+
+    def remove_data(self):
+        print("-> Usuwam zapisane dane logowania")
+
+        if os.path.exists(self.data_file):
+            os.remove(self.data_file)
+        else:
+            raise FileNotFoundError(
+                "Błąd: Nie znaleziono pliku z zapisanymi danymi logowania"
+            )
+
+
+class NjuAccount(EncoderDecoder):
+
+    def __init__(self, username_encoded=None, password_encoded=None, salt=None):
+        EncoderDecoder.__init__(self)
+        self.username_encoded = username_encoded
+        self.password_encoded = password_encoded
+        self.salt = salt
         self.ns_headers = requests.utils.default_headers()
         self.ns_headers.update(
             {
@@ -166,8 +120,15 @@ class Connection:
             }
         )
         self.ses = requests.Session()
+        self.balance_output = None
+        self.pending_payment_output = None
 
-    def login(self, username, password):
+    def login(self):
+        self.decode_data(
+            username_encoded=self.username_encoded,
+            password_encoded=self.password_encoded,
+            salt=self.salt,
+        )
 
         login_site = self.ses.get(
             "https://www.njumobile.pl/logowanie", headers=self.ns_headers
@@ -177,7 +138,7 @@ class Connection:
         login_soup = bs4(login_resp, "html.parser")
 
         # Get _dynSessConf value from source code
-        sess_no = find_data(login_soup, "input", "name", "_dynSessConf", "value")
+        sess_no = login_soup.find("input", {"name": "_dynSessConf"})["value"]
 
         payload_login = {
             "_dyncharset": "UTF-8",
@@ -186,9 +147,9 @@ class Connection:
             "_D:/ptk/sun/login/formhandler/LoginFormHandler.backUrl": "",
             "/ptk/sun/login/formhandler/LoginFormHandler.hashMsisdn": "",
             "_D:/ptk/sun/login/formhandler/LoginFormHandler.hashMsisdn": "",
-            "phone-input": username,
+            "phone-input": self.username,
             "_D:phone-input": "",
-            "password-form": password,
+            "password-form": self.password,
             "_D:password-form": "",
             "login-submit": "zaloguj się",
             "_D:login-submit": "",
@@ -206,13 +167,11 @@ class Connection:
         try:
             logged_soup = bs4(login_req_resp, "html.parser")
 
-            logged_no = find_data(
-                logged_soup, "li", "class", "cf title-dashboard-summary"
-            )
+            logged_no = logged_soup.find("li", {"class": "cf title-dashboard-summary"})
 
             print("-> Udało się, zalogowany numer to: {}".format(logged_no.text))
         except AttributeError:
-            sys.exit("-> BŁĄD: Na pewno podałeś poprawne dane logowania?")
+            raise AttributeError("BŁĄD: Na pewno podałeś poprawne dane logowania?")
 
     def logout(self):
 
@@ -232,13 +191,11 @@ class Connection:
         logout_req_resp = logout_req.text
         logout_soup = bs4(logout_req_resp, "html.parser")
 
-        logout_confirm = find_data(
-            logout_soup, "span", "class", "sun-header__link-inner"
-        )
+        logout_confirm = logout_soup.find("span", {"class": "sun-header__link-inner"})
 
         # Check if logout is successful
         if logout_confirm is None:
-            sys.exit("-> BŁĄD: Coś poszło nie tak, nie wylogowałem")
+            raise SystemError("BŁĄD: Coś poszło nie tak, nie wylogowałem się poprawnie")
         else:
             print("-> Wylogowano")
 
@@ -279,88 +236,113 @@ class Connection:
                 repeat += 1
                 time.sleep(2)
             else:
-                return bal_check_resp
+                self.balance_output = bal_check_resp
+                break
 
     def get_pending_payment(self):
 
-        pending_payments_check = self.ses.post(
+        pend_paym_check = self.ses.post(
             "https://www.njumobile.pl/mojekonto", headers=self.ns_headers
         )
-        pending_payments_check_resp = pending_payments_check.text
-        
-        return pending_payments_check_resp
+        pend_paym_check_resp = pend_paym_check.text
 
-class Result:
+        self.pending_payment_output = pend_paym_check_resp
 
 
-    """
-    Class parse data and extract required values.
-    Args:
-        none
+class Parser:
 
-    balance_status() - find data in ajax response (current period, rate, rate description,
-    cash amount and data-transfer package size).
-    invoices_status() - find last three invoices, and all details for them.
-    Provide detailed data only for unpaid invoice(s).
-    """
+    def __init__(self, raw_input):
+        self._raw_input = raw_input
 
-    def balance_status(self, html_resp):
+    @staticmethod
+    def print_pretty(current_value=None, max_value=None):
+        if not (isinstance(current_value, (int, float))) or not (
+            isinstance(max_value, (int, float))
+        ):
+            raise ValueError(
+                "BŁĄD: Parametr current_value i/lub max_value muszą być typu int lub float"
+            )
 
-        bal_soup = bs4(html_resp, "html.parser")
+        current_value_percentage = current_value * 100.0 / max_value
 
-        period_end = find_data(
-            bal_soup,
-            "div",
-            "class",
-            "small-comment mobile-text-right tablet-text-right",
+        graph_current = int(round(current_value_percentage / 5.0, 0))
+        graph_max = int(100.0 / 5.0)
+
+        usage_graph = graph_current * "#" + ((graph_max - graph_current) * "-")
+
+        for char in usage_graph:
+            sys.stdout.write(char)
+            sys.stdout.flush()
+            # change this value, to print diagram slower
+            time.sleep(0.1)
+
+        print(" (dostępne: {:2.2f}%)".format(current_value_percentage))
+
+    def print_balance_status(self):
+
+        bal_soup = bs4(self._raw_input, "html.parser")
+
+        period_end = bal_soup.find(
+            "div", {"class": "small-comment mobile-text-right tablet-text-right"}
         )
-        rate = find_data(
-            bal_soup, "div", "class", "four columns tablet-six mobile-twelve"
-        )
+        rate = bal_soup.find("div", {"class": "four columns tablet-six mobile-twelve"})
         offer_title = rate.find("strong", recursive=False)
-        curr_amount = find_data(bal_soup, "div", "class", "box-slider-info")
+        current_amount = bal_soup.find("div", {"class": "box-slider-info"})
         # Find all values in phrase (together with decimal values, if presented)
-        curr_transfer = [
+        current_transfer = [
             float(x)
             for x in re.findall(
                 "\d{1,2}\.?\d{0,2}",
-                find_data(bal_soup, "p", "class", "text-right").text,
+                bal_soup.find("p", {"class": "text-right"}).text,
             )
         ]
         print("= STAN KONTA =")
         print("-> Koniec okresu rozliczeniowego:{}".format(period_end.text))
         print("-> Nazwa oferty: {}".format(offer_title.text))
-        print("-> Aktualnie osiagnięty pułap płatności: {}".format(curr_amount.text))
+        print("-> Aktualnie osiagnięty pułap płatności: {}".format(current_amount.text))
         # Format all values to two decimal places
         print(
             "-> Wykorzystanie internetu (kraj): dostępne {:2.{prec}f} GB z {:2.{prec}f} GB".format(
-                curr_transfer[0], curr_transfer[1], prec=2
+                current_transfer[0], current_transfer[1], prec=2
             )
         )
-        print_pretty(curr_transfer[0], curr_transfer[1])
+        self.print_pretty(
+            current_value=current_transfer[0], max_value=current_transfer[1]
+        )
         print(
             "-> Wykorzystanie internetu (EU): dostępne {:2.{prec}f} GB z {:2.{prec}f} GB".format(
-                curr_transfer[2], curr_transfer[3], prec=2
+                current_transfer[2], current_transfer[3], prec=2
             )
         )
-        print_pretty(curr_transfer[2], curr_transfer[3])
+        self.print_pretty(
+            current_value=current_transfer[2], max_value=current_transfer[3]
+        )
 
-    def pending_payment_status(self, html_resp):
-        pending_payment_soup = bs4(html_resp, "html.parser")
+    def print_pending_payment_status(self):
+
+        pending_payment_soup = bs4(self._raw_input, "html.parser")
         # It's always right side of screen and last element
-        pending_payment_col = find_all_data(pending_payment_soup, "div", "class", "columns eight")[-1]
+        pending_payment_col = pending_payment_soup.find_all(
+            "div", {"class", "columns eight"}
+        )[-1]
         pending_payment = re.findall(
-                "\d+\.\d+", find_data(pending_payment_col, "li", "class", "cf title-dashboard-summary").text)[0]
+            "\d+\.\d+",
+            pending_payment_col.find(
+                "li", {"class": "cf title-dashboard-summary"}
+            ).text,
+        )[0]
         print("= KWOTA DO ZAPŁATY =")
-        print("-> Aktualnie do zapłaty: {} zł".format(pending_payment).replace('.', ','))
+        print(
+            "-> Aktualnie do zapłaty: {} zł".format(pending_payment).replace(".", ",")
+        )
 
-        
+
 def main():
 
     script = sys.argv[0]
-    desc = "njuscript 1.2.0 (c) 2025"
+    desc = "njuscript 2.0.0 (c) 2025"
 
-    # Argparse for better manage of arguments
+    # Argparse for better management of arguments
     parser = argparse.ArgumentParser(prog=script, description=desc)
     parser.add_argument(
         "-c", "--clean", action="store_true", help="clean configuration"
@@ -369,30 +351,19 @@ def main():
 
     print(desc)
 
-    # Set data_file variable for static methods (class UserData)
-    data_file = "database.dat"
-
-    # Create Connection() object
-    conn = Connection()
+    ud = UserData()
 
     # If requested, clean previously saved data (prepare for new user)
     if options.clean:
+        ud.remove_data()
 
-        UserData.reset()
-
-    # If configuration data exists, use this credentials (class UserData object is not necessary)
-    if os.path.exists(data_file):
-
-        username_dec, password_dec = UserData.decode_data(data_file)
-        conn.login(username_dec, password_dec)
-
-    # Otherwise, create UserData object
+    if os.path.exists(ud.data_file):
+        ud.get_credentials_from_file()
     else:
-
         username = input("Podaj numer telefonu: ")
         password = getpass.getpass("Podaj hasło: ")
 
-        user = UserData(username, password, data_file)
+        ud.get_credentials(username_input=username, password_input=password)
 
         while True:
 
@@ -401,32 +372,28 @@ def main():
             ).capitalize()
 
             if prompt == "T":
-
-                salt, salted_pass = user.encode_data()
-                user.save_data(salt, salted_pass)
-                username_dec, password_dec = user.decode_data(data_file)
-                conn.login(username_dec, password_dec)
+                ud.save_credentials_to_file()
                 break
 
             elif prompt == "N":
-
-                conn.login(username, password)
                 break
 
             elif prompt == "A":
-
                 sys.exit("-> Anulowane przez użytkownika")
 
             print("Nie wybrałeś poprawnej wartości.")
 
-    # Create objects necessary to show account details
-    balance = conn.get_balance()
-    payment = conn.get_pending_payment()
-    res = Result()
-    res.balance_status(balance)
-    res.pending_payment_status(payment)
-
-    conn.logout()
+    na = NjuAccount(
+        username_encoded=ud.username_encoded,
+        password_encoded=ud.password_encoded,
+        salt=ud.salt,
+    )
+    na.login()
+    na.get_balance()
+    na.get_pending_payment()
+    Parser(na.balance_output).print_balance_status()
+    Parser(na.pending_payment_output).print_pending_payment_status()
+    na.logout()
 
 
 if __name__ == "__main__":
