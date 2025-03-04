@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
 
-import re
+import argparse
+import base64
+import getpass
 import os
+import re
 import sys
 import time
-import getpass
-import argparse
-import requests
-import base64
 from datetime import datetime
+
+import requests
 from bs4 import BeautifulSoup as bs4
 
 
 class EncoderDecoder:
+    """
+    A class used to encode and decode username and password.
+    """
 
     def __init__(self):
+        """
+        Initializes the EncoderDecoder with default values.
+        """
         self.username = None
         self.password = None
         self.username_encoded = None
@@ -22,7 +29,21 @@ class EncoderDecoder:
         self.salt = None
 
     def encode_data(self, username_input=None, password_input=None):
+        """
+        Encodes the provided username and password.
 
+        Parameters
+        ----------
+        username_input : str
+            The username to be encoded. If None, raises ValueError.
+        password_input : str
+            The password to be encoded. If None, raises ValueError.
+
+        Raises
+        ------
+        ValueError
+            If username_input or password_input is None.
+        """
         if username_input is None or password_input is None:
             raise ValueError("BŁĄD: Parametr username i/lub password nie mogą być None")
 
@@ -43,6 +64,23 @@ class EncoderDecoder:
         self.salt = salt
 
     def decode_data(self, username_encoded=None, password_encoded=None, salt=None):
+        """
+        Decodes the stored encoded username and password.
+
+        Parameters
+        ----------
+        username_encoded : str
+            The encoded username. If None, raises ValueError.
+        password_encoded : str
+            The encoded password. If None, raises ValueError.
+        salt : str
+            The salt used during encoding. If None, raises ValueError.
+
+        Raises
+        ------
+        ValueError
+            If username_encoded, password_encoded, or salt is None.
+        """
         if all(v is None for v in [username_encoded, password_encoded, salt]):
             raise ValueError("BŁĄD: Parametr username i/lub password nie mogą być None")
 
@@ -59,12 +97,22 @@ class EncoderDecoder:
 
 
 class UserData(EncoderDecoder):
+    """
+    A class used to manage user data, inheriting from EncoderDecoder.
+    """
 
     def __init__(self):
+        """
+        Initializes the UserData with default values and sets the data file name.
+        """
+        super(EncoderDecoder, self).__init__()
         self.data_file = "database.dat"
 
     def _save_encoded_data_to_file(self):
-        with open(self.data_file, "w") as f:
+        """
+        Saves the encoded username, password, and salt to a file.
+        """
+        with open(self.data_file, "w", encoding="UTF-8") as f:
             f.write(
                 "{0}&%{1}%&{2}".format(
                     self.username_encoded, self.password_encoded, self.salt
@@ -72,30 +120,62 @@ class UserData(EncoderDecoder):
             )
 
     def _get_encoded_data_from_file(self):
-        f = open(self.data_file, "r")
-        for line in f:
-            # Find username
-            self.username_encoded = re.search("^(.*)&%", line).group(1)
-            # Find salted password
-            self.password_encoded = re.search("&%(.*)%&", line).group(1)
-            # Find salt
-            self.salt = re.search("%&(.*)$", line).group(1)
+        """
+        Retrieves the encoded username, password, and salt from a file.
+        """
+        with open(self.data_file, "r", encoding="UTF-8") as f:
+            for line in f:
+                # Find username
+                self.username_encoded = re.search("^(.*)&%", line).group(1)
+                # Find salted password
+                self.password_encoded = re.search("&%(.*)%&", line).group(1)
+                # Find salt
+                self.salt = re.search("%&(.*)$", line).group(1)
 
     def get_credentials(self, username_input=None, password_input=None):
+        """
+        Collects the provided username and password.
+
+        Parameters
+        ----------
+        username_input : str
+            The username to be encoded. If None, raises ValueError.
+        password_input : str
+            The password to be encoded. If None, raises ValueError.
+
+        Raises
+        ------
+        ValueError
+            If username_input or password_input is None.
+        """
         if username_input is None or password_input is None:
             raise ValueError("BŁĄD: Parametr username i/lub password nie mogą być None")
 
         self.encode_data(username_input=username_input, password_input=password_input)
 
     def get_credentials_from_file(self):
+        """
+        Retrieves the encoded username, password, and salt from a file.
+        """
         print("-> Znaleziono plik z zapisanymi danymi logowania")
         self._get_encoded_data_from_file()
 
     def save_credentials_to_file(self):
+        """
+        Saves the encoded username, password, and salt to a file.
+        """
         print("-> Wybrano opcje zapisania danych logowania")
         self._save_encoded_data_to_file()
 
     def remove_data(self):
+        """
+        Removes the file containing the encoded username, password, and salt.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the data file does not exist.
+        """
         print("-> Usuwam zapisane dane logowania")
 
         if os.path.exists(self.data_file):
@@ -107,8 +187,23 @@ class UserData(EncoderDecoder):
 
 
 class NjuAccount(EncoderDecoder):
+    """
+    A class used to manage Nju account, inheriting from EncoderDecoder.
+    """
 
     def __init__(self, username_encoded=None, password_encoded=None, salt=None):
+        """
+        Initializes the NjuAccount with encoded username, password, and salt.
+
+        Parameters
+        ----------
+        username_encoded : str
+            The encoded username.
+        password_encoded : str
+            The encoded password.
+        salt : str
+            The salt used during encoding.
+        """
         EncoderDecoder.__init__(self)
         self.username_encoded = username_encoded
         self.password_encoded = password_encoded
@@ -116,7 +211,8 @@ class NjuAccount(EncoderDecoder):
         self.ns_headers = requests.utils.default_headers()
         self.ns_headers.update(
             {
-                "User-Agent": "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0",
+                "User-Agent": "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:52.0) "
+                + "Gecko/20100101 Firefox/52.0",
             }
         )
         self.ses = requests.Session()
@@ -124,6 +220,14 @@ class NjuAccount(EncoderDecoder):
         self.pending_payment_output = None
 
     def login(self):
+        """
+        Logs into the Nju account using the encoded username and password.
+
+        Raises
+        ------
+        AttributeError
+            If login is unsuccessful.
+        """
         self.decode_data(
             username_encoded=self.username_encoded,
             password_encoded=self.password_encoded,
@@ -170,11 +274,20 @@ class NjuAccount(EncoderDecoder):
             logged_no = logged_soup.find("li", {"class": "cf title-dashboard-summary"})
 
             print("-> Udało się, zalogowany numer to: {}".format(logged_no.text))
-        except AttributeError:
-            raise AttributeError("BŁĄD: Na pewno podałeś poprawne dane logowania?")
+        except AttributeError as exc:
+            raise AttributeError(
+                "BŁĄD: Na pewno podałeś poprawne dane logowania?"
+            ) from exc
 
     def logout(self):
+        """
+        Logs out of the Nju account.
 
+        Raises
+        ------
+        SystemError
+            If logout is unsuccessful.
+        """
         payload_logout = {
             "_dyncharset": "UTF-8",
             "logout-submit": "wyloguj się",
@@ -183,7 +296,8 @@ class NjuAccount(EncoderDecoder):
         }
 
         logout_req = self.ses.post(
-            "https://www.njumobile.pl/?_DARGS=/core/v3.0/navigation/account_navigation.jsp.portal-logout-form",
+            "https://www.njumobile.pl/?_DARGS=/core/v3.0/navigation/"
+            + "account_navigation.jsp.portal-logout-form",
             data=payload_logout,
             headers=self.ns_headers,
         )
@@ -196,13 +310,15 @@ class NjuAccount(EncoderDecoder):
         # Check if logout is successful
         if logout_confirm is None:
             raise SystemError("BŁĄD: Coś poszło nie tak, nie wylogowałem się poprawnie")
-        else:
-            print("-> Wylogowano")
+
+        print("-> Wylogowano")
 
         self.ses.cookies.clear()
 
     def get_balance(self):
-
+        """
+        Retrieves the account balance.
+        """
         params_ajax = {
             "group": "home-alerts-state-funds",
             "toGet": "home-alerts-state-funds",
@@ -214,7 +330,8 @@ class NjuAccount(EncoderDecoder):
         }
 
         headers_ajax = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:52.0) Gecko/20100101 Firefox/52.0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 6.3; WOW64; rv:52.0) "
+            + "Gecko/20100101 Firefox/52.0",
             "Host": "www.njumobile.pl",
             "Accept": "*/*",
             "Accept-Encoding": "gzip, deflate, br",
@@ -240,7 +357,9 @@ class NjuAccount(EncoderDecoder):
                 break
 
     def get_pending_payment(self):
-
+        """
+        Retrieves the pending payment information.
+        """
         pend_paym_check = self.ses.post(
             "https://www.njumobile.pl/mojekonto", headers=self.ns_headers
         )
@@ -250,12 +369,38 @@ class NjuAccount(EncoderDecoder):
 
 
 class Parser:
+    """
+    A class used to parse and display account information.
+    """
 
     def __init__(self, raw_input):
+        """
+        Initializes the Parser with raw input data.
+
+        Parameters
+        ----------
+        raw_input : str
+            The raw HTML input data to be parsed.
+        """
         self._raw_input = raw_input
 
     @staticmethod
     def print_pretty(current_value=None, max_value=None):
+        """
+        Prints a graphical representation of the current value as a percentage of the max value.
+
+        Parameters
+        ----------
+        current_value : int or float
+            The current value to be represented.
+        max_value : int or float
+            The maximum value to be represented.
+
+        Raises
+        ------
+        ValueError
+            If current_value or max_value is not an int or float.
+        """
         if not (isinstance(current_value, (int, float))) or not (
             isinstance(max_value, (int, float))
         ):
@@ -279,7 +424,9 @@ class Parser:
         print(" (dostępne: {:2.2f}%)".format(current_value_percentage))
 
     def print_balance_status(self):
-
+        """
+        Parses and prints the balance status from the raw input data.
+        """
         bal_soup = bs4(self._raw_input, "html.parser")
 
         period_end = bal_soup.find(
@@ -292,7 +439,7 @@ class Parser:
         current_transfer = [
             float(x)
             for x in re.findall(
-                "\d{1,2}\.?\d{0,2}",
+                r"\d{1,2}\.?\d{0,2}",
                 bal_soup.find("p", {"class": "text-right"}).text,
             )
         ]
@@ -319,14 +466,16 @@ class Parser:
         )
 
     def print_pending_payment_status(self):
-
+        """
+        Parses and prints the pending payment status from the raw input data.
+        """
         pending_payment_soup = bs4(self._raw_input, "html.parser")
         # It's always right side of screen and last element
         pending_payment_col = pending_payment_soup.find_all(
             "div", {"class", "columns eight"}
         )[-1]
         pending_payment = re.findall(
-            "\d+\.\d+",
+            r"\d+\.\d+",
             pending_payment_col.find(
                 "li", {"class": "cf title-dashboard-summary"}
             ).text,
@@ -338,12 +487,14 @@ class Parser:
 
 
 def main():
-
-    script = sys.argv[0]
-    desc = "njuscript 2.0.0 (c) 2025"
-
-    # Argparse for better management of arguments
+    """
+    Main function to execute the script.
+    """
+    script = os.path.basename(sys.argv[0])
+    app_name = "ns"
+    desc = f"{app_name} 2.0.2. Script to check nju account balance."
     parser = argparse.ArgumentParser(prog=script, description=desc)
+
     parser.add_argument(
         "-c", "--clean", action="store_true", help="clean configuration"
     )
@@ -375,10 +526,10 @@ def main():
                 ud.save_credentials_to_file()
                 break
 
-            elif prompt == "N":
+            if prompt == "N":
                 break
 
-            elif prompt == "A":
+            if prompt == "A":
                 sys.exit("-> Anulowane przez użytkownika")
 
             print("Nie wybrałeś poprawnej wartości.")
