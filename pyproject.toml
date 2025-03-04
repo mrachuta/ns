@@ -1,0 +1,22 @@
+[project]
+name = "ns"
+description = "Script to check nju account balance."
+requires-python = ">=3.9"
+
+[tool.mypy]
+python_version = "3.9"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.pylint.basic]
+recursive = true
+fail-under = 8
+reports = true
+output-format = "parseable"
+
+[tool.isort]
+skip_gitignore = true
+profile = "black"
