@@ -492,7 +492,7 @@ def main():
     """
     script = os.path.basename(sys.argv[0])
     app_name = "ns"
-    desc = f"{app_name} 2.0.2. Script to check nju account balance."
+    desc = f"{app_name} 2.0.1. Script to check nju account balance."
     parser = argparse.ArgumentParser(prog=script, description=desc)
 
     parser.add_argument(
