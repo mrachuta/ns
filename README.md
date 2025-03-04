@@ -1,5 +1,5 @@
 ## Project name
-njuscript (ns) - polish mobile provider account-balance checker.  
+ns - the multiplatform account balance checker for Polish mobile provider njumobile.
 
 ## Table of contents
 - [Project name](#project-name)
@@ -45,12 +45,12 @@ To use on Android you will need to follow these steps:
 2. Run QPython, tap "QPyPi" button and select "Pip Client"
 3. Paste following command and run to install required packages:
     ```
-    pip install -r https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v2.0.0/requirements.txt
+    pip install -r https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v2.0.2/requirements.txt
     ```
 4. After installation, back to main screen and tap "Terminal"
 5. Paste following command and run to get script:
     ```
-    import os, requests; p = "{0}/scripts3/ns".format(os.environ["ANDROID_PUBLIC"]); os.makedirs(p, exist_ok=True); r = requests.get('https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v2.0.0/ns.py'); file = open("{0}/ns.py".format(p), 'wb'); file.write(r.content); file.close(); print('Script installed successfully in following location: {0}'.format(p));
+    import os, requests; p = "{0}/scripts3/ns".format(os.environ["ANDROID_PUBLIC"]); os.makedirs(p, exist_ok=True); r = requests.get('https://raw.githubusercontent.com/mrachuta/ns/refs/tags/v2.0.2/ns.py'); file = open("{0}/ns.py".format(p), 'wb'); file.write(r.content); file.close(); print('Script installed successfully in following location: {0}'.format(p));
 
     ```
 6. Back to main screen and click buton at the top-middle of screen to open box with scripts
