@@ -1,0 +1,71 @@
+name: Release
+run-name: >
+  Release job triggered by ${{ case(github.event_name == 'pull_request', 'change', 'comment') }} 
+  on pull request #${{ github.event.pull_request.number || github.event.issue.number }}
+
+on:
+  pull_request:
+    branches: 
+      - "master"
+    types: 
+      - opened
+      - labeled
+      - unlabeled
+      - closed
+  issue_comment:
+    types: 
+      - created
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  contents: write
+  statuses: write
+
+jobs:
+  validate-for-release:
+    if: |
+      (
+        github.event_name == 'pull_request' &&
+          (
+            github.event.action == 'opened' ||
+            github.event.action == 'labeled' ||
+            github.event.action == 'unlabeled'
+          )
+      ) || (
+        github.event_name == 'issue_comment' &&
+        startsWith(
+          github.event.comment.body, '/validate-for-release'
+        )
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate for release
+        uses: mrachuta/github-action-release-on-pr-label@master
+        id: validate_for_release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          pull_request_id: ${{ github.event.pull_request.number || github.event.issue.number }}
+          mode: validate
+          debug: ${{ runner.debug }}
+
+  create-release:
+    if: |
+      github.event_name == 'pull_request' && 
+      github.event.action == 'closed' && 
+      github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create release
+        uses: mrachuta/github-action-release-on-pr-label@master
+        id: create_release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          pull_request_id: ${{ github.event.pull_request.number }}
+          mode: release
+          debug: ${{ runner.debug }}
