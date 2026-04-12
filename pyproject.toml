@@ -1,14 +1,14 @@
 [project]
 name = "ns"
-description = "Script to check nju account balance."
-requires-python = ">=3.9"
+description = "A script to check nju account balance."
+requires-python = ">=3.12"
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.12"
 
 [tool.black]
 line-length = 88
-target-version = ['py39']
+target-version = ['py312']
 include = '\.pyi?$'
 
 [tool.pylint.basic]
